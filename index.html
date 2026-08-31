@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>הריצות של צליל</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FF6FA5">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="צליל רצה">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#FFEAF3;
+    --surface:#FFFFFF;
+    --surface-2:#FFE3EF;
+    --border:#FFC2DE;
+    --text:#4A2338;
+    --muted:#B96D95;
+    --primary:#FF6FA5;
+    --primary-dark:#E4487E;
+    --accent:#FFD65C;
+    --shadow:0 6px 20px rgba(228,72,126,.12);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;background:linear-gradient(180deg,#FFEAF3,#FFF6FA 220px,#FFEAF3);color:var(--text);min-height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+    padding:20px 16px 56px;
+    max-width:480px;
+    margin:0 auto;
+  }
+  .mono{font-family:ui-monospace,"SF Mono","Courier New",monospace;}
+  button{font-family:inherit;cursor:pointer;}
+  svg{width:18px;height:18px;flex-shrink:0;}
+
+  .eyebrow{font-size:11px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+  h1{font-size:26px;margin:0 0 2px;font-weight:800;color:var(--primary-dark);}
+  .sub{font-size:13px;color:var(--muted);margin-bottom:18px;}
+
+  .card{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:20px;padding:18px;margin-bottom:14px;box-shadow:var(--shadow);
+  }
+
+  /* setup banner */
+  .setup{
+    display:flex;align-items:center;gap:12px;
+    background:linear-gradient(135deg,var(--primary),#FF9BC2);
+    color:#fff;border:none;
+  }
+  .setup .txt{flex:1;}
+  .setup .txt b{display:block;font-size:14px;margin-bottom:2px;}
+  .setup .txt span{font-size:12px;opacity:.9;}
+  .setup button{
+    background:#fff;color:var(--primary-dark);border:none;border-radius:12px;
+    padding:9px 14px;font-size:12.5px;font-weight:800;white-space:nowrap;
+  }
+
+  /* status/gauge */
+  .status-card{display:flex;align-items:center;gap:16px;}
+  .gauge{position:relative;width:80px;height:80px;flex-shrink:0;}
+  .gauge svg{width:80px;height:80px;transform:rotate(-90deg);}
+  .gauge-track{fill:none;stroke:var(--surface-2);stroke-width:9;}
+  .gauge-fill{fill:none;stroke:var(--primary);stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .4s ease;}
+  .gauge-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800;}
+  .gauge-stats{flex:1;}
+  .gauge-stats .row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;}
+  .gauge-stats .row span:first-child{color:var(--muted);}
+  .gauge-stats .row span:last-child{font-weight:800;}
+  .flame{color:var(--primary-dark);display:inline-flex;align-items:center;gap:4px;}
+
+  /* today */
+  .today-card{}
+  .today-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .today-head .name{font-size:15px;font-weight:800;}
+  .today-head .tag{font-size:11px;color:var(--muted);}
+  .pill{display:inline-block;font-size:10.5px;font-weight:800;background:var(--surface-2);color:var(--primary-dark);border-radius:999px;padding:3px 10px;}
+  .done-btn{
+    width:100%;border:none;border-radius:16px;padding:16px;
+    font-size:15px;font-weight:800;background:var(--surface-2);color:var(--primary-dark);
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    transition:background .15s,color .15s;
+  }
+  .done-btn.done{background:linear-gradient(135deg,var(--primary),#FF9BC2);color:#fff;}
+  .done-btn svg{width:20px;height:20px;}
+  .rest-note{text-align:center;color:var(--muted);font-size:13px;padding:8px 0;}
+
+  /* week nav */
+  .week-nav{display:flex;align-items:center;justify-content:space-between;margin:20px 0 10px;}
+  .week-nav .label{font-size:14px;font-weight:800;}
+  .week-nav .today-btn{font-size:11px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:8px;padding:3px 8px;margin-inline-start:8px;}
+  .nav-btn{background:var(--surface);border:1px solid var(--border);color:var(--primary-dark);border-radius:10px;width:34px;height:34px;font-size:16px;display:flex;align-items:center;justify-content:center;}
+  .nav-btn:active{background:var(--surface-2);}
+
+  .day{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .day.today{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary) inset;}
+  .day.rest{opacity:.5;}
+  .day-label .name{font-size:14px;font-weight:700;}
+  .day-label .date{font-size:11px;color:var(--muted);}
+  .day-state{font-size:12px;font-weight:700;color:var(--muted);}
+  .day-state.done{color:var(--primary-dark);}
+
+  /* history */
+  details{margin-top:22px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px;}
+  summary{font-size:13px;font-weight:800;cursor:pointer;list-style:none;display:flex;justify-content:space-between;}
+  summary::-webkit-details-marker{display:none;}
+  .heatmap{margin-top:14px;}
+  .heat-row{display:flex;gap:4px;margin-bottom:4px;align-items:center;}
+  .heat-row .wk-label{font-size:9.5px;color:var(--muted);width:34px;flex-shrink:0;}
+  .heat-cell{width:16px;height:16px;border-radius:5px;background:var(--surface-2);border:1px solid var(--border);}
+  .heat-legend{display:flex;gap:10px;margin-top:10px;font-size:10.5px;color:var(--muted);align-items:center;flex-wrap:wrap;}
+  .heat-legend .sw{width:11px;height:11px;border-radius:3px;display:inline-block;margin-inline-end:4px;}
+
+  /* settings */
+  .settings-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+  .settings-toggle b{font-size:14px;}
+  .settings-body{margin-top:14px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;}
+  .day-picker{display:flex;gap:6px;flex-wrap:wrap;}
+  .day-chip{border:1.5px solid var(--border);background:transparent;color:var(--text);border-radius:10px;padding:8px 0;font-size:12.5px;font-weight:700;width:38px;text-align:center;}
+  .day-chip.on{background:var(--primary);border-color:var(--primary);color:#fff;}
+  .time-row{display:flex;gap:10px;}
+  .time-row .field{flex:1;margin-bottom:0;}
+  input[type=time], select{
+    width:100%;border:1.5px solid var(--border);border-radius:10px;padding:9px 10px;
+    font-size:14px;color:var(--text);background:var(--surface);
+  }
+  .switch-row{display:flex;align-items:center;justify-content:space-between;background:var(--surface-2);border-radius:12px;padding:12px 14px;margin-bottom:14px;}
+  .switch-row span{font-size:13px;font-weight:700;}
+  .switch{position:relative;width:44px;height:26px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;inset:0;background:var(--border);border-radius:999px;transition:.2s;}
+  .slider:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;}
+  .switch input:checked + .slider{background:var(--primary);}
+  .switch input:checked + .slider:before{transform:translateX(-18px);}
+  .save-btn{width:100%;border:none;border-radius:14px;padding:14px;font-size:14.5px;font-weight:800;background:linear-gradient(135deg,var(--primary),#FF9BC2);color:#fff;}
+  .save-btn:disabled{opacity:.6;}
+  .test-btn{width:100%;margin-top:10px;border:1.5px solid var(--border);border-radius:14px;padding:11px;font-size:13px;font-weight:700;background:transparent;color:var(--primary-dark);}
+  .save-msg{text-align:center;font-size:12px;color:var(--primary-dark);margin-top:8px;height:14px;}
+
+  .install-btn{position:fixed;inset-inline:0;bottom:16px;margin:0 auto;width:calc(100% - 32px);max-width:448px;background:var(--text);color:#fff;border:none;border-radius:16px;padding:14px;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 10px 30px rgba(0,0,0,.25);}
+
+  .footer{margin-top:22px;text-align:center;}
+  .footer .total{font-size:12px;color:var(--muted);}
+  .reset-btn{margin-top:12px;font-size:11.5px;color:var(--muted);background:none;border:none;text-decoration:underline;padding:6px;}
+</style>
+</head>
+<body>
+
+<div class="eyebrow">🌸 מעקב אישי לצליל</div>
+<h1>הריצות של צליל</h1>
+<div class="sub" id="subLine">טוענת נתונים…</div>
+
+<div class="card setup" id="setupCard" style="display:none">
+  <div class="txt">
+    <b>אפשרי התראות</b>
+    <span>כדי לקבל תזכורת בזמן שקבעת ליציאה לריצה</span>
+  </div>
+  <button id="enableNotifBtn">אישור ✨</button>
+</div>
+
+<div class="card status-card">
+  <div class="gauge">
+    <svg viewBox="0 0 80 80">
+      <circle class="gauge-track" cx="40" cy="40" r="34"/>
+      <circle id="gaugeFill" class="gauge-fill" cx="40" cy="40" r="34"/>
+    </svg>
+    <div class="gauge-num mono" id="gaugeNum">0%</div>
+  </div>
+  <div class="gauge-stats">
+    <div class="row"><span>השבוע הושלם</span><span id="statWeek" class="mono">0/0</span></div>
+    <div class="row"><span>רצף ריצות</span><span class="flame mono" id="statStreak">0</span></div>
+    <div class="row"><span>סה״כ ריצות</span><span id="statTotal" class="mono">0</span></div>
+  </div>
+</div>
+
+<div class="card today-card">
+  <div class="today-head">
+    <div class="name" id="todayName">היום</div>
+    <div class="tag pill" id="todayTag">—</div>
+  </div>
+  <button class="done-btn" id="doneBtn">✅ סימנתי שרצתי!</button>
+</div>
+
+<div class="week-nav">
+  <button class="nav-btn" id="prevWeek">‹</button>
+  <div>
+    <span class="label" id="weekLabel"></span>
+    <button class="today-btn" id="toToday">היום</button>
+  </div>
+  <button class="nav-btn" id="nextWeek">›</button>
+</div>
+
+<div id="days"></div>
+
+<div class="card" style="margin-top:18px;">
+  <div class="settings-toggle" id="settingsToggle">
+    <b>⚙️ הגדרות תזכורות</b>
+    <span id="settingsCaret">＋</span>
+  </div>
+  <div class="settings-body" id="settingsBody" style="display:none">
+    <div class="field">
+      <label>באילו ימים יוצאים לרוץ</label>
+      <div class="day-picker" id="dayPicker"></div>
+    </div>
+    <div class="time-row">
+      <div class="field">
+        <label>משעה</label>
+        <input type="time" id="startTime" value="17:30">
+      </div>
+      <div class="field">
+        <label>עד שעה</label>
+        <input type="time" id="endTime" value="19:00">
+      </div>
+    </div>
+    <div class="field">
+      <label>כל כמה זמן להזכיר, אם עוד לא רצת</label>
+      <select id="intervalMin">
+        <option value="15">כל 15 דקות</option>
+        <option value="20">כל 20 דקות</option>
+        <option value="30" selected>כל 30 דקות</option>
+        <option value="45">כל 45 דקות</option>
+        <option value="60">כל שעה</option>
+      </select>
+    </div>
+    <div class="switch-row">
+      <span>תזכורות פעילות</span>
+      <label class="switch"><input type="checkbox" id="enabledToggle"><span class="slider"></span></label>
+    </div>
+    <button class="save-btn" id="saveSettingsBtn">שמירת הגדרות 🌷</button>
+    <button class="test-btn" id="testPushBtn">📣 שליחת התראת בדיקה עכשיו</button>
+    <div class="save-msg" id="saveMsg"></div>
+  </div>
+</div>
+
+<details>
+  <summary><span>היסטוריה — 8 שבועות אחרונים</span><span class="mono" id="histPct">—</span></summary>
+  <div class="heatmap" id="heatmap"></div>
+  <div class="heat-legend">
+    <span><span class="sw" style="background:var(--surface-2)"></span>לא רלוונטי</span>
+    <span><span class="sw" style="background:color-mix(in srgb, var(--primary) 45%, var(--surface-2))"></span>פוספס</span>
+    <span><span class="sw" style="background:var(--primary)"></span>רצה 🌸</span>
+  </div>
+</details>
+
+<div class="footer">
+  <div class="total mono" id="allTime"></div>
+  <button class="reset-btn" id="resetBtn">איפוס היסטוריית הריצות</button>
+</div>
+
+<button class="install-btn" id="installBtn" style="display:none">⬇️ התקנה כאפליקציה על מסך הבית</button>
+
+<script>
+(function(){
+  "use strict";
+
+  var VAPID_PUBLIC_KEY = "BIUtiG5DBQyeSJlnU6JjAaczqPmOr1QjBBLeMltLgycWgXEZHp1of7lxsL-XKNxICPhj-TtXCbS7qoQQX3B-5a8";
+  var DAY_MS = 86400000;
+  var DAY_NAMES = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+  var DAY_SHORT = ["א","ב","ג","ד","ה","ו","ש"];
+
+  var state = { settings: { days:[1,4], startTime:"17:30", endTime:"19:00", intervalMin:30, enabled:false }, completions:{}, subscribed:false };
+  var viewedWeekStart = startOfWeek(new Date());
+
+  // ---------- helpers ----------
+  function toKey(d){
+    var y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), day=String(d.getDate()).padStart(2,"0");
+    return y+"-"+m+"-"+day;
+  }
+  function startOfWeek(d){
+    var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    x.setDate(x.getDate() - x.getDay());
+    return x;
+  }
+  function addDays(d, n){ var x = new Date(d); x.setDate(x.getDate()+n); return x; }
+  function today0(){ var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
+  function isScheduled(weekday){ return state.settings.days.indexOf(weekday) !== -1; }
+  function isDone(dateKey){ return !!state.completions[dateKey]; }
+
+  function urlBase64ToUint8Array(base64String) {
+    var padding = "=".repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    var rawData = atob(base64);
+    var outputArray = new Uint8Array(rawData.length);
+    for (var i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+    return outputArray;
+  }
+
+  async function api(path, opts){
+    var res = await fetch(path, Object.assign({ headers: { "Content-Type": "application/json" } }, opts || {}));
+    if(!res.ok) throw new Error("api error " + res.status);
+    return res.json();
+  }
+
+  // ---------- data load ----------
+  async function loadState(){
+    try{
+      var s = await api("/api/state");
+      state.settings = s.settings;
+      state.completions = s.completions || {};
+      state.subscribed = s.subscribed;
+    }catch(e){ /* keep defaults, likely first run / offline */ }
+    render();
+  }
+
+  // ---------- stats ----------
+  function computeStats(){
+    var today = today0();
+    var weekStart = startOfWeek(today);
+    var weekDone = 0, weekTotal = 0;
+    for(var i=0;i<7;i++){
+      var d = addDays(weekStart, i);
+      if(d > today) continue;
+      if(!isScheduled(d.getDay())) continue;
+      weekTotal++;
+      if(isDone(toKey(d))) weekDone++;
+    }
+    var allTotal = Object.keys(state.completions).length;
+
+    var streak = 0;
+    var cursor = new Date(today);
+    var todayKey = toKey(cursor);
+    if(isScheduled(cursor.getDay()) && !isDone(todayKey)){
+      cursor = addDays(cursor, -1);
+    } else if(!isScheduled(cursor.getDay())){
+      cursor = addDays(cursor, -1);
+    }
+    var guard = 0;
+    while(guard < 2000){
+      guard++;
+      if(!isScheduled(cursor.getDay())){ cursor = addDays(cursor, -1); continue; }
+      if(isDone(toKey(cursor))){ streak++; cursor = addDays(cursor, -1); }
+      else break;
+    }
+    return { weekDone: weekDone, weekTotal: weekTotal, streak: streak, allTotal: allTotal };
+  }
+
+  // ---------- render ----------
+  function render(){
+    renderSetup();
+    renderGauge();
+    renderToday();
+    renderWeekLabel();
+    renderDays();
+    renderHeatmap();
+    renderSettingsForm();
+  }
+
+  function renderSetup(){
+    var show = ("Notification" in window) && Notification.permission !== "granted" || !state.subscribed;
+    document.getElementById("setupCard").style.display = (("Notification" in window) && !state.subscribed) ? "flex" : "none";
+    document.getElementById("subLine").textContent = state.subscribed ? "התראות פעילות 💗" : "עדיין בלי התראות — לחצי למעלה כדי להפעיל";
+  }
+
+  function renderGauge(){
+    var s = computeStats();
+    var pct = s.weekTotal ? Math.round((s.weekDone / s.weekTotal) * 100) : 0;
+    var r = 34, circumference = 2 * Math.PI * r;
+    var offset = circumference - (pct/100) * circumference;
+    var fill = document.getElementById("gaugeFill");
+    fill.setAttribute("stroke-dasharray", circumference.toFixed(1));
+    fill.setAttribute("stroke-dashoffset", offset.toFixed(1));
+    document.getElementById("gaugeNum").textContent = pct + "%";
+    document.getElementById("statWeek").textContent = s.weekDone + "/" + s.weekTotal;
+    document.getElementById("statStreak").innerHTML = "🔥 " + s.streak;
+    document.getElementById("statTotal").textContent = s.allTotal;
+    document.getElementById("allTime").textContent = "סה״כ " + s.allTotal + " ריצות נרשמו מתחילת המעקב";
+  }
+
+  function renderToday(){
+    var d = today0();
+    var key = toKey(d);
+    var scheduled = isScheduled(d.getDay());
+    document.getElementById("todayName").textContent = DAY_NAMES[d.getDay()] + " · " + d.getDate() + "." + (d.getMonth()+1);
+    var tag = document.getElementById("todayTag");
+    tag.textContent = scheduled ? "יום ריצה 🏃‍♀️" : "יום מנוחה";
+
+    var btn = document.getElementById("doneBtn");
+    if(!scheduled){
+      btn.style.display = "none";
+    } else {
+      btn.style.display = "flex";
+      var done = isDone(key);
+      btn.classList.toggle("done", done);
+      btn.textContent = done ? "🎉 רצת היום! (לחצי לביטול)" : "✅ סימנתי שרצתי!";
+    }
+  }
+
+  function renderWeekLabel(){
+    var end = addDays(viewedWeekStart, 6);
+    var fmt = function(d){ return d.getDate() + "." + (d.getMonth()+1); };
+    var real = startOfWeek(today0());
+    var suffix = viewedWeekStart.getTime() === real.getTime() ? " (השבוע)" : "";
+    document.getElementById("weekLabel").textContent = fmt(viewedWeekStart) + " – " + fmt(end) + suffix;
+  }
+
+  function renderDays(){
+    var container = document.getElementById("days");
+    container.innerHTML = "";
+    var todayKey = toKey(today0());
+    for(var i=0;i<7;i++){
+      var d = addDays(viewedWeekStart, i);
+      var wd = d.getDay();
+      var key = toKey(d);
+      var scheduled = isScheduled(wd);
+      var el = document.createElement("div");
+      el.className = "day" + (key===todayKey ? " today" : "") + (!scheduled ? " rest" : "");
+      var labelHtml = '<div class="day-label"><div class="name">'+DAY_NAMES[wd]+'</div><div class="date mono">'+d.getDate()+"."+(d.getMonth()+1)+'</div></div>';
+      var stateHtml;
+      if(!scheduled){
+        stateHtml = '<div class="day-state">מנוחה</div>';
+      } else {
+        var done = isDone(key);
+        stateHtml = '<div class="day-state'+(done?" done":"")+'">' + (done ? "🌸 רצה" : "טרם") + '</div>';
+      }
+      el.innerHTML = labelHtml + stateHtml;
+      container.appendChild(el);
+    }
+  }
+
+  function renderHeatmap(){
+    var map = document.getElementById("heatmap");
+    map.innerHTML = "";
+    var weeks = 8;
+    var realWeekStart = startOfWeek(today0());
+    var totalDone = 0, totalSched = 0;
+    for(var w = weeks-1; w >= 0; w--){
+      var wStart = addDays(realWeekStart, -7*w);
+      var row = document.createElement("div");
+      row.className = "heat-row";
+      var lbl = document.createElement("span");
+      lbl.className = "wk-label mono";
+      lbl.textContent = wStart.getDate() + "." + (wStart.getMonth()+1);
+      row.appendChild(lbl);
+      for(var i=0;i<7;i++){
+        var d = addDays(wStart, i);
+        var wd = d.getDay();
+        var cell = document.createElement("div");
+        cell.className = "heat-cell";
+        if(isScheduled(wd) && d <= today0()){
+          var key = toKey(d);
+          var done = isDone(key);
+          totalSched++; if(done) totalDone++;
+          cell.style.background = done ? "var(--primary)" : "color-mix(in srgb, var(--primary) 35%, var(--surface-2))";
+          if(done) cell.style.borderColor = "var(--primary)";
+        } else if(!isScheduled(wd)){
+          cell.style.opacity = "0.35";
+        } else {
+          cell.style.opacity = "0.15";
+        }
+        row.appendChild(cell);
+      }
+      map.appendChild(row);
+    }
+    var pct = totalSched ? Math.round((totalDone/totalSched)*100) : 0;
+    document.getElementById("histPct").textContent = pct + "% ב-8 שבועות";
+  }
+
+  function renderSettingsForm(){
+    var picker = document.getElementById("dayPicker");
+    picker.innerHTML = "";
+    DAY_SHORT.forEach(function(label, idx){
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "day-chip" + (state.settings.days.indexOf(idx) !== -1 ? " on" : "");
+      btn.textContent = label;
+      btn.dataset.day = idx;
+      btn.addEventListener("click", function(){
+        var day = Number(this.dataset.day);
+        var days = state.settings.days.slice();
+        var i = days.indexOf(day);
+        if(i === -1) days.push(day); else days.splice(i,1);
+        state.settings.days = days;
+        renderSettingsForm();
+      });
+      picker.appendChild(btn);
+    });
+    document.getElementById("startTime").value = state.settings.startTime;
+    document.getElementById("endTime").value = state.settings.endTime;
+    document.getElementById("intervalMin").value = String(state.settings.intervalMin);
+    document.getElementById("enabledToggle").checked = !!state.settings.enabled;
+  }
+
+  // ---------- actions ----------
+  async function toggleToday(){
+    var d = today0();
+    if(!isScheduled(d.getDay())) return;
+    var key = toKey(d);
+    // optimistic update
+    if(state.completions[key]) delete state.completions[key];
+    else state.completions[key] = new Date().toISOString();
+    render();
+    try{ await api("/api/complete", { method:"POST", body: JSON.stringify({ date:key }) }); }
+    catch(e){ /* will resync on next load */ }
+  }
+
+  async function enableNotifications(){
+    if(!("serviceWorker" in navigator) || !("PushManager" in window)){
+      alert("הדפדפן הזה לא תומך בהתראות. נסי לפתוח מ-Chrome.");
+      return;
+    }
+    try{
+      var perm = await Notification.requestPermission();
+      if(perm !== "granted"){ alert("בלי אישור התראות לא נוכל להזכיר לך 🙏"); return; }
+      var reg = await navigator.serviceWorker.ready;
+      var sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+      await api("/api/subscribe", { method:"POST", body: JSON.stringify({ subscription: sub }) });
+      state.subscribed = true;
+      render();
+    }catch(e){
+      alert("משהו השתבש בהפעלת ההתראות. אפשר לנסות שוב.");
+    }
+  }
+
+  async function saveSettings(){
+    var btn = document.getElementById("saveSettingsBtn");
+    var msg = document.getElementById("saveMsg");
+    var payload = {
+      days: state.settings.days,
+      startTime: document.getElementById("startTime").value,
+      endTime: document.getElementById("endTime").value,
+      intervalMin: Number(document.getElementById("intervalMin").value),
+      enabled: document.getElementById("enabledToggle").checked
+    };
+    if(!payload.days.length){ msg.textContent = "בחרי לפחות יום אחד לריצה"; return; }
+    btn.disabled = true;
+    try{
+      var r = await api("/api/settings", { method:"POST", body: JSON.stringify(payload) });
+      state.settings = r.settings;
+      msg.textContent = "נשמר 🌷";
+      render();
+    }catch(e){
+      msg.textContent = "שגיאה בשמירה, נסי שוב";
+    }
+    btn.disabled = false;
+    setTimeout(function(){ msg.textContent = ""; }, 2500);
+  }
+
+  async function testPush(){
+    var msg = document.getElementById("saveMsg");
+    if(!state.subscribed){ msg.textContent = "קודם צריך להפעיל התראות"; return; }
+    try{
+      await api("/api/test-push", { method:"POST", body: JSON.stringify({}) });
+      msg.textContent = "נשלחה התראת בדיקה 📣";
+    }catch(e){
+      msg.textContent = "השליחה נכשלה, נסי שוב";
+    }
+    setTimeout(function(){ msg.textContent = ""; }, 2500);
+  }
+
+  // ---------- events ----------
+  document.getElementById("doneBtn").addEventListener("click", toggleToday);
+  document.getElementById("enableNotifBtn").addEventListener("click", enableNotifications);
+  document.getElementById("prevWeek").addEventListener("click", function(){ viewedWeekStart = addDays(viewedWeekStart,-7); renderWeekLabel(); renderDays(); });
+  document.getElementById("nextWeek").addEventListener("click", function(){ viewedWeekStart = addDays(viewedWeekStart,7); renderWeekLabel(); renderDays(); });
+  document.getElementById("toToday").addEventListener("click", function(){ viewedWeekStart = startOfWeek(today0()); renderWeekLabel(); renderDays(); });
+  document.getElementById("settingsToggle").addEventListener("click", function(){
+    var body = document.getElementById("settingsBody");
+    var open = body.style.display !== "none";
+    body.style.display = open ? "none" : "block";
+    document.getElementById("settingsCaret").textContent = open ? "＋" : "－";
+  });
+  document.getElementById("saveSettingsBtn").addEventListener("click", saveSettings);
+  document.getElementById("testPushBtn").addEventListener("click", testPush);
+  document.getElementById("resetBtn").addEventListener("click", async function(){
+    if(!confirm("למחוק את כל היסטוריית הריצות? הפעולה בלתי הפיכה.")) return;
+    var keys = Object.keys(state.completions);
+    for(var i=0;i<keys.length;i++){
+      try{ await api("/api/complete", { method:"POST", body: JSON.stringify({ date:keys[i] }) }); }catch(e){}
+    }
+    await loadState();
+  });
+
+  // install prompt
+  var deferredPrompt = null;
+  window.addEventListener("beforeinstallprompt", function(e){
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById("installBtn").style.display = "flex";
+  });
+  document.getElementById("installBtn").addEventListener("click", async function(){
+    if(!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    document.getElementById("installBtn").style.display = "none";
+  });
+  window.addEventListener("appinstalled", function(){
+    document.getElementById("installBtn").style.display = "none";
+  });
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("service-worker.js").catch(function () {});
+    });
+  }
+
+  loadState();
+})();
+</script>
+</body>
+</html>

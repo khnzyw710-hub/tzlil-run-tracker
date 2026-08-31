@@ -1,0 +1,9 @@
+{
+  "name": "tzlil-run-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PWA run reminders for Tzlil - twice a week, real push notifications",
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}
