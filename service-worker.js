@@ -1,4 +1,4 @@
-const CACHE = "tzlil-run-v1";
+const CACHE = "tzlil-run-v2";
 const ASSETS = [
   "./",
   "./index.html",

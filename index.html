@@ -156,6 +156,13 @@
 <h1>הריצות של צליל</h1>
 <div class="sub" id="subLine">טוענת נתונים…</div>
 
+<div class="card setup" id="iosInstallCard" style="display:none">
+  <div class="txt">
+    <b>שלב ראשון באייפון 📲</b>
+    <span>לפני שאפשר להפעיל התראות: לחצי על כפתור השיתוף ⬆️ בספארי, ואז ״הוספה למסך הבית״. אחרי זה פתחי את האפליקציה מהאייקון החדש ותוכלי לאשר התראות.</span>
+  </div>
+</div>
+
 <div class="card setup" id="setupCard" style="display:none">
   <div class="txt">
     <b>אפשרי התראות</b>
@@ -278,7 +285,17 @@
     return x;
   }
   function addDays(d, n){ var x = new Date(d); x.setDate(x.getDate()+n); return x; }
-  function today0(){ var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
+  function today0(){
+    // Pin "today" to Israel local time (not the device's timezone) so it always
+    // agrees with the server's dateKey in api/_time.js — a device with a different
+    // timezone or clock skew must not log a run under the wrong date.
+    var fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem", year:"numeric", month:"2-digit", day:"2-digit" });
+    var parts = fmt.formatToParts(new Date());
+    var get = function(t){ return Number(parts.find(function(p){ return p.type === t; }).value); };
+    return new Date(get("year"), get("month")-1, get("day"));
+  }
+  function isIOS(){ return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; }
+  function isStandalone(){ return window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true; }
   function isScheduled(weekday){ return state.settings.days.indexOf(weekday) !== -1; }
   function isDone(dateKey){ return !!state.completions[dateKey]; }
 
@@ -352,8 +369,9 @@
   }
 
   function renderSetup(){
-    var show = ("Notification" in window) && Notification.permission !== "granted" || !state.subscribed;
-    document.getElementById("setupCard").style.display = (("Notification" in window) && !state.subscribed) ? "flex" : "none";
+    var needsIosInstall = isIOS() && !isStandalone();
+    document.getElementById("iosInstallCard").style.display = (needsIosInstall && !state.subscribed) ? "flex" : "none";
+    document.getElementById("setupCard").style.display = (("Notification" in window) && !state.subscribed && !needsIosInstall) ? "flex" : "none";
     document.getElementById("subLine").textContent = state.subscribed ? "התראות פעילות 💗" : "עדיין בלי התראות — לחצי למעלה כדי להפעיל";
   }
 
@@ -487,9 +505,12 @@
   }
 
   // ---------- actions ----------
+  var toggleInFlight = false;
   async function toggleToday(){
     var d = today0();
     if(!isScheduled(d.getDay())) return;
+    if(toggleInFlight) return; // guard against double-click races against the gist read-modify-write
+    toggleInFlight = true;
     var key = toKey(d);
     // optimistic update
     if(state.completions[key]) delete state.completions[key];
@@ -497,6 +518,7 @@
     render();
     try{ await api("/api/complete", { method:"POST", body: JSON.stringify({ date:key }) }); }
     catch(e){ /* will resync on next load */ }
+    toggleInFlight = false;
   }
 
   async function enableNotifications(){
@@ -516,6 +538,7 @@
       state.subscribed = true;
       render();
     }catch(e){
+      console.error("enableNotifications failed:", e);
       alert("משהו השתבש בהפעלת ההתראות. אפשר לנסות שוב.");
     }
   }
